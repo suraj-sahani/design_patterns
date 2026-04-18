@@ -1,18 +1,31 @@
-import type { BaseRecord, Database } from "../lib/types";
+import { MongoDB } from "../lib/db/mongoDb";
+import { MySQLDB } from "../lib/db/mysql";
+import { PostgresDB } from "../lib/db/postgreSQL";
 
-// Basic Factory Pattern of creating a db instance
-export function createDatabase<T extends BaseRecord>() {
-  class InMemoryDatabase implements Database<T> {
-    private db: Record<string, T> = {};
+type DBTypeMap = {
+  postgreSQL: PostgresDB;
+  mongoDB: MongoDB;
+  mySQL: MySQLDB;
+};
 
-    public get(id: string) {
-      return this.db[id];
-    }
-
-    public set(newValue: T) {
-      this.db[newValue.id] = newValue;
+class DatabaseFactory {
+  public static createDb<T extends keyof DBTypeMap>(type: T): DBTypeMap[T] {
+    switch (type) {
+      case "postgreSQL": {
+        return new PostgresDB() as DBTypeMap[T];
+      }
+      case "mongoDB": {
+        return new MongoDB() as DBTypeMap[T];
+      }
+      case "mySQL": {
+        return new MySQLDB() as DBTypeMap[T];
+      }
+      default:
+        throw new Error(`Unsupported DB type: ${type}`);
     }
   }
-
-  return InMemoryDatabase;
 }
+
+const pgPool = DatabaseFactory.createDb("postgreSQL");
+const mongoDb = DatabaseFactory.createDb("mongoDB");
+const mySQL = DatabaseFactory.createDb("mySQL");
